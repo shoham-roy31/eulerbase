@@ -45,7 +45,7 @@ if __name__ == "__main__":
     db = GraphDB(URI = URI,
                        AUTH = (username,password)
                        )
-    index_name = "reviewIndex"
+    index_name = "dataProductIndex"
     llm = "gemma4:31b-cloud"
     embedding_model = "qwen3-embedding:0.6b"
     kB = graphRAG(

@@ -1,7 +1,7 @@
 import pandas as pd
 
 CSV = 'csv'
-XLS = 'xls'
+XLSX = 'xlsx'
 
 def assert_type(var,datatype):
     try:
@@ -20,6 +20,6 @@ def get_df(path:str,
            **kwargs
            ) -> pd.DataFrame:
     if format == CSV:
-        return pd.read_csv(path,**kwargs)    
-    if format == XLS:
+        return pd.read_csv(path, **kwargs)    
+    if format == XLSX:
         return pd.read_excel(path,**kwargs)
