@@ -2,7 +2,7 @@ import os
 from .graph_db import GraphDB
 from neo4j_graphrag.llm import OllamaLLM
 from neo4j_graphrag.generation import GraphRAG
-from neo4j_graphrag.retrievers import VectorRetriever
+from neo4j_graphrag.retrievers import VectorRetriever,VectorCypherRetriever
 from neo4j_graphrag.embeddings import OllamaEmbeddings
 from neo4j_graphrag.message_history import InMemoryMessageHistory
 
@@ -18,20 +18,29 @@ class graphRAG:
         self.driver = driver
         self.index_name = index_name
         self.embedding_model = OllamaEmbeddings(model = embedding_model)
-        self.retriver = VectorRetriever(driver = self.driver.driver,
+        # self.retriever = VectorCypherRetriever(
+        #                                 driver = self.driver.driver,
+        #                                 index_name=self.index_name,
+        #                                 retrieval_query=RETRIVAL_QUERY,
+        #                                 embedder=self.embedding_model,
+        #                             )
+        self.retriever = VectorRetriever(driver = self.driver.driver,
                                         index_name = self.index_name,
                                         embedder = self.embedding_model
                                         )
         self.history = InMemoryMessageHistory()
-        self.rag = GraphRAG(retriever= self.retriver,
+        self.rag = GraphRAG(retriever= self.retriever,
                             llm = self.llm
                             )
-    def sreach(self,
+    def search(self,
                query_text:str
                ) -> str:
         
         res = self.rag.search(query_text = query_text,
                               message_history = self.history,
+                              retriever_config = {
+                                "top_k" : 30
+                              },
                               return_context = True).answer
         self.history.add_message({"role":"user","content":query_text})
         self.history.add_message({"role":"assistant","content": res})
@@ -58,5 +67,8 @@ if __name__ == "__main__":
         print("Enter q to Quit")
         val = input("Query: ")
         if val.lower() == "q": break
-        res = kB.sreach(query_text = val)    
+        # ret = kB.retriever.search(query_text = val, top_k = 100)
+        # for item in ret.items:
+        #     print(item.content)
+        res = kB.search(query_text = val)    
         print(f"Answer: {res}")

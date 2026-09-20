@@ -9,6 +9,7 @@ from .ontology import ReviewsOntology,DataProductOntology
 
 type conf = Dict[str,Any]
 
+
 parent_dir = Path(__file__).resolve().parent
 reviews_path = parent_dir / "data" / "reviews_data"
 data_product_path = parent_dir / "data" / "data_product"
@@ -40,6 +41,7 @@ def load_conf(path: str) -> dict:
             except json.JSONDecodeError:
                 # If JSON parsing fails, fall back to leaving it as a raw string
                 config[key] = value
+        elif key.startswith("#"): continue
         else:
             # It's a standard Cypher query string or plain parameter string
             config[key] = value

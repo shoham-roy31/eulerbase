@@ -220,3 +220,6 @@ __marimo__/
 # Raw Data
 *.csv
 *.xls
+
+# InMemory DB
+/DB/*

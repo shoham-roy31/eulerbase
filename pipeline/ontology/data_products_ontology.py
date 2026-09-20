@@ -35,30 +35,34 @@ class DataProductOntology(BaseOntology):
                 self.files.add(file)
 
     def load(self,**kwargs) -> None:
-        for file in tqdm(list(self.files)):
-            format = file.name.split('.')[-1]
-            df = get_df(path = file,
-                        format = format,
-                        **kwargs
-                        )
-            df = df.fillna("N/A")
-            self.driver.query_hook(
-                self.ontology,
-                rows = df.to_dict("records")
-            )
+        # for file in tqdm(list(self.files)):
+        #     format = file.name.split('.')[-1]
+        #     df = get_df(path = file,
+        #                 format = format,
+        #                 **kwargs
+        #                 )
+        #     df = df.fillna("N/A")
+        #     self.driver.query_hook(
+        #         self.ontology,
+        #         rows = df.to_dict("records")
+        #     )
         embedder = OllamaEmbeddings(model = self.embedder)
         print("-"*5+"Loading Embeddings"+5*"-")
         for k,query in tqdm(self.embedd_query.items()):
             if query.get('embed_query'):
                 records = self.driver.query_hook(query['embed_query'])
                 for r in tqdm(records):
-                    vec = embedder.embed_query(r['text'])
+                    # vec = embedder.embed_query(r['text'])
                     if query.get('add_embed_query'):
+                        # self.driver.query_hook(
+                        #         query['add_embed_query'],
+                        #         id = r['id'],
+                        #         vec = vec
+                        #         )
                         self.driver.query_hook(
-                                query['add_embed_query'],
-                                id = r['id'],
-                                vec = vec
-                                )
+                            "MATCH(n:DataProduct {id:$id}) SET n.metadata = $text",
+                            id = r['id'], text = r['text']
+                        )
                     else: print(f"{k} doesn't has 'add_embed_query' key")
             else: print(f"{k} doesn't has 'embed_query")
         self.driver.query_hook(self.vector_index_query)
