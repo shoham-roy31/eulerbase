@@ -28,7 +28,7 @@ db = GraphDB(
 kB = graphRAG(
     llm = config["llm"],
     embedding_model = config["embedding_model"],
-    index_name = "dataProductIndex",
+    index_name = config["default_index_name"],
     driver = db
 )
 
