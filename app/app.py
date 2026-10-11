@@ -4,23 +4,32 @@ Streamlit chat UI for the Neo4j GraphRAG pipeline.
 Run: streamlit run streamlit_app.py
 """
 import os
+import sys
 import streamlit as st
-from neo4j import GraphDatabase
-from neo4j_graphrag.embeddings import OllamaEmbeddings
-from neo4j_graphrag.retrievers import VectorRetriever
-from neo4j_graphrag.llm import OllamaLLM
-from neo4j_graphrag.generation import GraphRAG
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils import (
+    GraphDB,
+    graphRAG,
+    load_conf
+)
 from neo4j_graphrag.message_history import InMemoryMessageHistory
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
+
+CONF_PATH = Path(__file__).parent/ "config" / "dev.conf"
+config = load_conf(CONF_PATH)
 NEO4J_URI = os.environ["URI"]
 NEO4J_AUTH = (os.environ["USERNAME"], os.environ["PASSWORD"])
-EMBED_MODEL = "qwen3-embedding:0.6b"
-LLM_MODEL = "gemma4:31b-cloud"
-INDEX_NAME = "dataProductIndex"
-DEFAULT_TOP_K = 8
+EMBED_MODEL = config["EMBED_MODEL"]
+LLM_MODEL = config["LLM_MODEL"]
+INDEX_NAME = config["INDEX_NAME"]
+DEFAULT_TOP_K = int(config["DEFAULT_TOP_K"])
 
 st.set_page_config(page_title="GraphRAG Chat", page_icon="🕸️", layout="wide")
 
@@ -29,27 +38,19 @@ st.set_page_config(page_title="GraphRAG Chat", page_icon="🕸️", layout="wide
 # ---------------------------------------------------------------------------
 @st.cache_resource
 def get_driver():
-    return GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
-
-
-@st.cache_resource
-def get_embedder():
-    return OllamaEmbeddings(model=EMBED_MODEL)
-
-
-@st.cache_resource
-def get_retriever():
-    return VectorRetriever(
-        get_driver(),
-        index_name=INDEX_NAME,
-        embedder=get_embedder(),
+    return GraphDB(
+        URI = NEO4J_URI,
+        AUTH = NEO4J_AUTH
     )
-
 
 @st.cache_resource
 def get_rag():
-    llm = OllamaLLM(model_name=LLM_MODEL)
-    return GraphRAG(retriever=get_retriever(), llm=llm)
+    return graphRAG(
+        llm = LLM_MODEL,
+        embedding_model = EMBED_MODEL,
+        index_name = INDEX_NAME,
+        driver = get_driver()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +73,7 @@ with st.sidebar:
     st.header("🕸️ GraphRAG Settings")
 
     try:
-        get_driver().verify_connectivity()
+        get_driver()
         st.success("Connected to Neo4j")
     except Exception as e:
         st.error(f"Neo4j connection failed: {e}")
